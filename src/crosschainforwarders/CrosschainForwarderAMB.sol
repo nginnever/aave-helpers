@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// TODO: fork dependency repo and add AMB interfaces
 import {IL2BridgeExecutor} from 'governance-crosschain-bridges/contracts/interfaces/IL2BridgeExecutor.sol';
 
 interface ICanonicalTransactionChain {
@@ -9,12 +8,6 @@ interface ICanonicalTransactionChain {
 }
 
 interface IAMB {
-  function messageSender() external view returns (address);
-
-  function messageId() external view returns (bytes32);
-
-  function messageSourceChainId() external view returns (bytes32);
-
   function requireToPassMessage(
     address _contract,
     bytes memory _data,
@@ -25,12 +18,12 @@ interface IAMB {
 /**
  * @title A generic executor for proposals targeting the gnosis chain v3 pool
  * @author Gnosis Guild
- * @notice You can **only** use this executor when the optimism payload has a `execute()` signature without parameters
- * @notice You can **only** use this executor when the optimism payload is expected to be executed via `DELEGATECALL`
- * @notice You can **only** execute payloads on optimism with up to prepayed gas which is specified in `enqueueL2GasPrepaid` gas.
+ * @notice You can **only** use this executor when the AMB payload has a `execute()` signature without parameters
+ * @notice You can **only** use this executor when the AMB payload is expected to be executed via `DELEGATECALL`
+ * @notice You can **only** execute payloads on Gnosis Chain with up to prepayed gas which is specified in `enqueueL2GasPrepaid` gas.
  * Prepaid gas is the maximum gas covered by the bridge without additional payment.
- * @dev This executor is a generic wrapper to be used with Optimism CrossDomainMessenger (https://etherscan.io/address/0x25ace71c97b33cc4729cf772ae268934f7ab5fa1)
- * It encodes and sends via the L2CrossDomainMessenger a message to queue for execution an action on L2, in the Aave OPTIMISM_BRIDGE_EXECUTOR.
+ * @dev This executor is a generic wrapper to be used with Optimism CrossDomainMessenger (https://etherscan.io/address/0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e)
+ * It encodes and sends via the L2CrossDomainMessenger a message to queue for execution an action on Gnosis Chain, in the Aave AMB_BRIDGE_EXECUTOR.
  */
 contract CrosschainForwarderAMB {
   /**
@@ -41,15 +34,20 @@ contract CrosschainForwarderAMB {
     0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e;
 
   /**
-   * @dev The optimism bridge executor is a L2 governance execution contract.
+   * @dev The Gnosis Chain bridge executor is a sidechain governance execution contract.
    * This contract allows queuing of proposals by allow listed addresses (in this case the L1 short executor).
-   * https://optimistic.etherscan.io/address/0x7d9103572bE58FfE99dc390E8246f02dcAe6f611
+   * https://gnosisscan.io/address/0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59
    */
-  address public constant AMB_BRIDGE_EXECUTOR = 0x7d9103572bE58FfE99dc390E8246f02dcAe6f611;
+  address public constant AMB_BRIDGE_EXECUTOR = 0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59;
+
+  /**
+   * @dev The gas limit of the queue transaction by the L2CrossDomainMessenger on Gnosis Chain.
+   */
+  uint256 public constant MAX_GAS_LIMIT = 5_000_000;
 
   /**
    * @dev this function will be executed once the proposal passes the mainnet vote.
-   * @param l2PayloadContract the optimism contract containing the `execute()` signature.
+   * @param l2PayloadContract the Gnosis Chain contract containing the `execute()` signature.
    */
   function execute(address l2PayloadContract) public {
     address[] memory targets = new address[](1);
@@ -71,15 +69,11 @@ contract CrosschainForwarderAMB {
       calldatas,
       withDelegatecalls
     );
-    // ICrossDomainMessenger(L1_CROSS_DOMAIN_MESSENGER_ADDRESS).sendMessage(
-    //   OPTIMISM_BRIDGE_EXECUTOR,
-    //   queue,
-    //   uint32(CANONICAL_TRANSACTION_CHAIN.enqueueL2GasPrepaid())
-    // );
+
     IAMB(L1_AMB_CROSS_DOMAIN_MESSENGER_ADDRESS).requireToPassMessage(
       AMB_BRIDGE_EXECUTOR,
       queue,
-      uint32(CANONICAL_TRANSACTION_CHAIN.enqueueL2GasPrepaid())
+      MAX_GAS_LIMIT
     );
   }
 }

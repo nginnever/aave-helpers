@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 // TODO: fork dependency repo and add AMB interfaces
-import {ICrossDomainMessenger} from 'governance-crosschain-bridges/contracts/dependencies/optimism/interfaces/ICrossDomainMessenger.sol';
 import {IL2BridgeExecutor} from 'governance-crosschain-bridges/contracts/interfaces/IL2BridgeExecutor.sol';
 
 interface ICanonicalTransactionChain {
@@ -38,25 +37,15 @@ contract CrosschainForwarderAMB {
    * @dev The L1 Cross Domain Messenger contract sends messages from L1 to L2, and relays messages
    * from L2 onto L1. In this contract it's used by the governance SHORT_EXECUTOR to send the encoded L2 queuing over the bridge.
    */
-  address public constant L1_CROSS_DOMAIN_MESSENGER_ADDRESS =
-    0x25ace71c97B33Cc4729CF772ae268934F7ab5fA1;
+  address public constant L1_AMB_CROSS_DOMAIN_MESSENGER_ADDRESS =
+    0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e;
 
   /**
    * @dev The optimism bridge executor is a L2 governance execution contract.
    * This contract allows queuing of proposals by allow listed addresses (in this case the L1 short executor).
    * https://optimistic.etherscan.io/address/0x7d9103572bE58FfE99dc390E8246f02dcAe6f611
    */
-  address public constant OPTIMISM_BRIDGE_EXECUTOR = 0x7d9103572bE58FfE99dc390E8246f02dcAe6f611;
-
-  address public constant amb = 0x7d9103572bE58FfE99dc390E8246f02dcAe6f611;
-
-  /**
-   * @dev The CTC contract is an append only log of transactions which must be applied to the rollup state.
-   * It also holds configurations like the currently prepayed amount of gas which is what this contract is utilizing.
-   * https://etherscan.io/address/0x5e4e65926ba27467555eb562121fac00d24e9dd2#code
-   */
-  ICanonicalTransactionChain public constant CANONICAL_TRANSACTION_CHAIN =
-    ICanonicalTransactionChain(0x5E4e65926BA27467555EB562121fac00D24E9dD2);
+  address public constant AMB_BRIDGE_EXECUTOR = 0x7d9103572bE58FfE99dc390E8246f02dcAe6f611;
 
   /**
    * @dev this function will be executed once the proposal passes the mainnet vote.
@@ -87,8 +76,8 @@ contract CrosschainForwarderAMB {
     //   queue,
     //   uint32(CANONICAL_TRANSACTION_CHAIN.enqueueL2GasPrepaid())
     // );
-    IAMB(L1_CROSS_DOMAIN_MESSENGER_ADDRESS).requireToPassMessage(
-      amb,
+    IAMB(L1_AMB_CROSS_DOMAIN_MESSENGER_ADDRESS).requireToPassMessage(
+      AMB_BRIDGE_EXECUTOR,
       queue,
       uint32(CANONICAL_TRANSACTION_CHAIN.enqueueL2GasPrepaid())
     );

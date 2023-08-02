@@ -3,10 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IL2BridgeExecutor} from 'governance-crosschain-bridges/contracts/interfaces/IL2BridgeExecutor.sol';
 
-interface ICanonicalTransactionChain {
-  function enqueueL2GasPrepaid() external view returns (uint256);
-}
-
 interface IAMB {
   function requireToPassMessage(
     address _contract,
